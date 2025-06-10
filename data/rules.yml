@@ -1,0 +1,27 @@
+version: "3.1"
+
+rules:
+- rule: Say hi when user greets
+  steps:
+  - intent: greet
+  - action: utter_greet
+
+- rule: Say bye when user says goodbye
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
+
+- rule: Respond to bot challenge
+  steps:
+  - intent: bot_challenge
+  - action: utter_iamabot
+
+- rule: Handle out-of-scope questions
+  steps:
+  - intent: out_of_scope
+  - action: action_fallback_gpt
+
+- rule: Implementation of the Two-Stage Fallback
+  steps:
+  - intent: nlu_fallback
+  - action: action_fallback_gpt 

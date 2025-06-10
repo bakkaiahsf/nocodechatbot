@@ -1,0 +1,16 @@
+# Environments
+venv/
+venv38/
+.env
+.env_local
+
+# Rasa files
+models/
+.rasa/
+results/
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd 
