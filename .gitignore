@@ -5,7 +5,7 @@ venv38/
 .env_local
 
 # Rasa files
-models/
+# models/  <-- commented out to allow pre-trained models
 .rasa/
 results/
 

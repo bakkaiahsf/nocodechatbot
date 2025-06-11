@@ -16,11 +16,11 @@ COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy the rest of the application (including pre-trained models)
 COPY . .
 
 # Expose port
 EXPOSE 5005
 
-# Start command - train model at runtime
-CMD ["sh", "-c", "rasa train && rasa run --enable-api --cors '*' --port 5005"] 
+# Start command - use pre-trained model
+CMD ["rasa", "run", "--enable-api", "--cors", "*", "--port", "5005"] 
