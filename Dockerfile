@@ -18,7 +18,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the actions directory
 COPY actions/ ./actions/
-COPY .env_local .
 
 # Expose port
 EXPOSE 5055

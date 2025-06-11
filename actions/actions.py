@@ -1,23 +1,14 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 from openai import OpenAI
 from rasa_sdk import Action
-from rasa_sdk.events import UserUtteranceReverted
 
-# Build a robust path to the .env_local file in the project root
-env_path = Path(__file__).parent.parent / '.env_local'
-
-# Load the environment variables from your .env_local file
-load_dotenv(dotenv_path=env_path)
-
+# Get API key from environment variable (set on Render)
 api_key = os.getenv("OPENAI_API_KEY")
-if not api_key or "YOUR_OPENAI_API_KEY" in api_key:
+if not api_key:
     raise ValueError(
         "\\n\\n================================================================\\n"
-        f"ERROR: OpenAI API key not found in '{env_path}'.\\n"
-        "Please make sure the file exists and contains your key, for example:\\n\\n"
-        'OPENAI_API_KEY="sk-..."\\n\\n'
+        "ERROR: OPENAI_API_KEY environment variable not set.\\n"
+        "Please set this environment variable on your Render service.\\n"
         "================================================================\\n"
     )
 
