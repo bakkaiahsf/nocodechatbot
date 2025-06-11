@@ -19,11 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Train the model
-RUN rasa train
-
 # Expose port
 EXPOSE 5005
 
-# Start command
-CMD ["rasa", "run", "--enable-api", "--cors", "*", "--port", "5005"] 
+# Start command - train model at runtime
+CMD ["sh", "-c", "rasa train && rasa run --enable-api --cors '*' --port 5005"] 
