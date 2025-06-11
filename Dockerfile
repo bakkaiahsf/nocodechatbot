@@ -16,14 +16,12 @@ COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
-
-# Train the model
-RUN rasa train
+# Copy the actions directory
+COPY actions/ ./actions/
+COPY .env_local .
 
 # Expose port
-EXPOSE 5005
+EXPOSE 5055
 
 # Start command
-CMD ["rasa", "run", "--enable-api", "--cors", "*", "--port", "5005"] 
+CMD ["rasa", "run", "actions", "--port", "5055"] 
