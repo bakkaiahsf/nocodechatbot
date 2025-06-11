@@ -1,0 +1,10 @@
+venv/
+venv38/
+.git/
+.rasa/
+models/
+results/
+*.pyc
+__pycache__/
+.gitignore
+README.md 
