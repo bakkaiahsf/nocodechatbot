@@ -1,0 +1,32 @@
+# Dockerfile for Rasa Main Server
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Rasa configuration files
+COPY config.yml domain.yml endpoints.yml ./
+COPY data/ ./data/
+
+# Create models directory
+RUN mkdir -p ./models
+
+# Set environment variables
+ENV RASA_MODEL_PATH="/app/models"
+ENV ACTION_ENDPOINT_URL="http://rasa-actions:5055/webhook"
+
+# Expose port for Rasa server
+EXPOSE 5005
+
+# Train the model and start the server
+CMD ["sh", "-c", "rasa train && rasa run --enable-api --cors '*' --port 5005 --endpoints endpoints.yml"] 
