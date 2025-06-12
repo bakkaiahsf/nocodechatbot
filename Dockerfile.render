@@ -8,13 +8,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install flask
+RUN pip install flask gunicorn
 
 # Copy Rasa configuration files
 COPY config.yml domain.yml endpoints.yml ./
@@ -27,13 +28,17 @@ RUN mkdir -p /app/models
 # Set environment variables
 ENV RASA_MODEL_PATH="/app/models"
 ENV ACTION_ENDPOINT_URL="http://localhost:5055/webhook"
+ENV PORT=8000
 
 # Expose ports for Rasa server and Actions server
 EXPOSE 5005
 EXPOSE 5055
+EXPOSE 8000
 
-# Create a health check script
-RUN echo 'from flask import Flask\n\
+# Create a standalone health check app
+RUN echo '#!/usr/bin/env python\n\
+from flask import Flask\n\
+\n\
 app = Flask(__name__)\n\
 \n\
 @app.route("/health")\n\
@@ -42,10 +47,26 @@ def health():\n\
 \n\
 if __name__ == "__main__":\n\
     app.run(host="0.0.0.0", port=8000)\n\
-' > /app/health_check.py
+' > /app/health_app.py
+
+RUN chmod +x /app/health_app.py
 
 # Create a startup script with model check
 RUN echo '#!/bin/bash\n\
+\n\
+# Start the health check server first \n\
+echo "Starting health check server..."\n\
+python /app/health_app.py &\n\
+HEALTH_PID=$!\n\
+\n\
+# Verify health server is running\n\
+echo "Waiting for health check server to start..."\n\
+sleep 5\n\
+if curl -s -f http://localhost:8000/health; then\n\
+  echo "Health check server is running!"\n\
+else\n\
+  echo "Health check server failed to start!"\n\
+fi\n\
 \n\
 # Check if models exist, train if not\n\
 MODEL_COUNT=$(find /app/models -name "*.tar.gz" | wc -l)\n\
@@ -54,17 +75,23 @@ if [ "$MODEL_COUNT" -eq 0 ]; then\n\
   rasa train || echo "Training failed, but continuing startup"\n\
 fi\n\
 \n\
-# Start the health check server\n\
-python /app/health_check.py &\n\
-\n\
 # Start the actions server in the background\n\
+echo "Starting actions server..."\n\
 rasa run actions --port 5055 &\n\
+ACTIONS_PID=$!\n\
 \n\
 # Wait for actions server to start\n\
-sleep 10\n\
+echo "Waiting for actions server to start..."\n\
+sleep 15\n\
 \n\
 # Start the main Rasa server\n\
-rasa run --enable-api --cors "*" --port 5005 --endpoints endpoints.yml\n\
+echo "Starting main Rasa server..."\n\
+rasa run --enable-api --cors "*" --port 5005 --endpoints endpoints.yml &\n\
+RASA_PID=$!\n\
+\n\
+# Monitor all processes\n\
+echo "All services started. Monitoring..."\n\
+wait $HEALTH_PID $ACTIONS_PID $RASA_PID\n\
 ' > /app/start.sh
 
 # Make the script executable
