@@ -21,8 +21,9 @@ COPY config.yml domain.yml endpoints.yml ./
 COPY data/ ./data/
 COPY actions/ ./actions/
 
-# Copy pre-trained models (no training on Render)
-COPY models/ ./models/
+# Create models directory and copy pre-trained models if they exist
+RUN mkdir -p ./models
+COPY models/ ./models/ || echo "No models found, will train on first startup"
 
 # Set environment variables
 ENV RASA_MODEL_PATH="/app/models"
@@ -44,8 +45,15 @@ if __name__ == "__main__":\n\
     app.run(host="0.0.0.0", port=8000)\n\
 ' > /app/health_check.py
 
-# Create a startup script
+# Create a startup script with model check
 RUN echo '#!/bin/bash\n\
+\n\
+# Check if models exist, train if not\n\
+if [ -z "$(ls -A /app/models)" ]; then\n\
+  echo "No models found, training new model..."\n\
+  rasa train || echo "Training failed, but continuing startup"\n\
+fi\n\
+\n\
 # Start the health check server\n\
 python /app/health_check.py &\n\
 \n\

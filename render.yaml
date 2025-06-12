@@ -8,6 +8,6 @@ services:
       - key: OPENAI_API_KEY
         sync: false
     healthCheckPath: /health
-    buildCommand: echo "Building Rasa Chatbot..."
+    buildCommand: mkdir -p models && echo "Building Rasa Chatbot..."
     startCommand: /app/start.sh
     port: 8000 

@@ -18,6 +18,26 @@
    ```
 4. Access the chatbot at http://localhost:5005
 
+## Handling Models for Deployment
+
+### Option 1: Train and Commit Models (Recommended)
+1. Train the model locally:
+   ```
+   docker-compose run --rm rasa-main rasa train
+   ```
+2. Commit the trained models to your repository:
+   ```
+   git add models/*.tar.gz
+   git commit -m "Add trained models for deployment"
+   git push
+   ```
+
+### Option 2: Train on First Startup
+If you don't commit pre-trained models, the Dockerfile is configured to train a model on first startup. However, this:
+- May fail on Render's free tier due to memory limitations
+- Will significantly increase startup time
+- Is not recommended for production
+
 ## Render Deployment
 
 ### Option 1: Deploy with Blueprint (Recommended)
