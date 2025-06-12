@@ -1,7 +1,23 @@
-# Dockerfile for Render deployment (combined Rasa + Actions)
+# Multi-stage Dockerfile for Render deployment
+# First stage: prepare the models and configuration
+FROM python:3.9-slim AS builder
+
+WORKDIR /build
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy application files
+COPY . /build/
+
+# Create models directory if it doesn't exist
+RUN mkdir -p /build/models
+
+# Second stage: final image
 FROM python:3.9-slim
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -16,13 +32,11 @@ RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install flask
 
-# Copy Rasa configuration files
-COPY config.yml domain.yml endpoints.yml ./
-COPY data/ ./data/
-COPY actions/ ./actions/
-
-# Create empty models directory - models will be trained during first startup if needed
-RUN mkdir -p /app/models
+# Copy files from builder stage
+COPY --from=builder /build/config.yml /build/domain.yml /build/endpoints.yml ./
+COPY --from=builder /build/data/ ./data/
+COPY --from=builder /build/actions/ ./actions/
+COPY --from=builder /build/models/ ./models/
 
 # Set environment variables
 ENV RASA_MODEL_PATH="/app/models"
