@@ -1,148 +1,59 @@
-# Rasa Chatbot Deployment
+# Rasa Chatbot Deployment Guide
 
-This project contains a Rasa chatbot with separate Docker containers for the main server and actions server.
+## Local Development
 
-## Architecture
+### Prerequisites
+- Docker and Docker Compose installed
+- Git
 
-- **Rasa Main Server**: Handles NLP processing, dialogue management, and serves the API
-- **Rasa Actions Server**: Executes custom actions including OpenAI GPT integration
+### Running Locally
+1. Clone the repository
+2. Set your OpenAI API key in an `.env` file:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
+3. Start the services:
+   ```
+   docker-compose up
+   ```
+4. Access the chatbot at http://localhost:5005
 
-## Prerequisites
+## Render Deployment
 
-- Docker (version 20.10+)
-- Docker Compose (version 1.29+)
-- OpenAI API Key
+### Option 1: Deploy with Blueprint (Recommended)
+1. Fork this repository to your GitHub account
+2. Sign up for [Render](https://render.com)
+3. Create a new "Blueprint" instance and connect your forked repository
+4. Render will automatically use the `render.yaml` configuration
 
-## Quick Start
+### Option 2: Manual Deployment
+1. Fork this repository to your GitHub account
+2. Sign up for [Render](https://render.com)
+3. Create a new "Web Service"
+4. Connect your GitHub repository
+5. Configure as follows:
+   - **Name:** `rasa-chatbot`
+   - **Environment:** `Docker`
+   - **Dockerfile Path:** `Dockerfile.render`
+   - **Environment Variables:**
+     - `OPENAI_API_KEY`: Your OpenAI API key
+   - **Health Check Path:** `/health`
+   - **Port:** `8000`
 
-### 1. Clone and Setup
+## Important Notes
+- The Render deployment uses pre-trained models to avoid memory issues
+- The free tier has limited resources, so we've combined both servers into one container
+- Make sure to commit your trained models to the repository before deploying
 
+## API Endpoints
+- Main Rasa API: `/webhooks/rest/webhook` (POST)
+- Health Check: `/health` (GET)
+
+## Testing the Deployment
 ```bash
-git clone <your-repo-url>
-cd nocode-chatbot
-```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in the root directory:
-
-```bash
-# Copy from existing local env file
-cp .env_local .env
-```
-
-Or create manually:
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-ACTION_ENDPOINT_URL=http://rasa-actions:5055/webhook
-ENVIRONMENT=development
-```
-
-### 3. Deploy Using Script (Recommended)
-
-Make the deployment script executable:
-```bash
-chmod +x deploy.sh
-```
-
-Deploy in development mode:
-```bash
-./deploy.sh dev
-```
-
-Deploy in production mode:
-```bash
-./deploy.sh prod
-```
-
-### 4. Manual Deployment (Alternative)
-
-#### Development Mode
-```bash
-docker-compose up -d --build
-```
-
-#### Production Mode
-```bash
-docker-compose -f docker-compose.prod.yml up -d --build
-```
-
-## Service Access
-
-After deployment, the services will be available at:
-
-- **Rasa Main Server**: http://localhost:5005
-- **Rasa Actions Server**: http://localhost:5055
-- **Health Check**: http://localhost:5005/health
-
-## Testing the Bot
-
-### REST API
-```bash
-curl -X POST http://localhost:5005/webhooks/rest/webhook \
+curl -X POST https://your-render-url.onrender.com/webhooks/rest/webhook \
   -H "Content-Type: application/json" \
-  -d '{"sender": "test", "message": "hello"}'
-```
-
-### Web Interface
-Open http://localhost:5005 in your browser to access the Rasa UI.
-
-## Management Commands
-
-### Check Service Status
-```bash
-./deploy.sh status
-# or
-docker-compose ps
-```
-
-### View Logs
-```bash
-./deploy.sh logs
-# or
-docker-compose logs -f
-```
-
-### Stop Services
-```bash
-./deploy.sh stop
-# or
-docker-compose down
-```
-
-### Restart Services
-```bash
-docker-compose restart
-```
-
-## Development
-
-### Training the Model
-The model is automatically trained when the main server container starts. To manually train:
-
-```bash
-# Enter the main server container
-docker exec -it rasa-main bash
-
-# Train the model
-rasa train
-
-# Exit the container
-exit
-```
-
-### Updating Actions
-1. Modify files in the `actions/` directory
-2. Restart the actions server:
-```bash
-docker-compose restart rasa-actions
-```
-
-### Adding New Training Data
-1. Update files in the `data/` directory
-2. Restart the main server to retrain:
-```bash
-docker-compose restart rasa-main
+  -d '{"sender": "test_user", "message": "hello"}'
 ```
 
 ## File Structure

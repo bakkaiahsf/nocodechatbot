@@ -1,0 +1,66 @@
+# Dockerfile for Render deployment (combined Rasa + Actions)
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install flask
+
+# Copy Rasa configuration files
+COPY config.yml domain.yml endpoints.yml ./
+COPY data/ ./data/
+COPY actions/ ./actions/
+
+# Copy pre-trained models (no training on Render)
+COPY models/ ./models/
+
+# Set environment variables
+ENV RASA_MODEL_PATH="/app/models"
+ENV ACTION_ENDPOINT_URL="http://localhost:5055/webhook"
+
+# Expose ports for Rasa server and Actions server
+EXPOSE 5005
+EXPOSE 5055
+
+# Create a health check script
+RUN echo 'from flask import Flask\n\
+app = Flask(__name__)\n\
+\n\
+@app.route("/health")\n\
+def health():\n\
+    return {"status": "ok"}\n\
+\n\
+if __name__ == "__main__":\n\
+    app.run(host="0.0.0.0", port=8000)\n\
+' > /app/health_check.py
+
+# Create a startup script
+RUN echo '#!/bin/bash\n\
+# Start the health check server\n\
+python /app/health_check.py &\n\
+\n\
+# Start the actions server in the background\n\
+rasa run actions --port 5055 &\n\
+\n\
+# Wait for actions server to start\n\
+sleep 10\n\
+\n\
+# Start the main Rasa server\n\
+rasa run --enable-api --cors "*" --port 5005 --endpoints endpoints.yml\n\
+' > /app/start.sh
+
+# Make the script executable
+RUN chmod +x /app/start.sh
+
+# Start both servers
+CMD ["/app/start.sh"] 

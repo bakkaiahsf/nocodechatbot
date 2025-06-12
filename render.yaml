@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: rasa-chatbot
+    env: docker
+    dockerfilePath: ./Dockerfile.render
+    plan: free
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /health
+    buildCommand: echo "Building Rasa Chatbot..."
+    startCommand: /app/start.sh
+    port: 8000 
