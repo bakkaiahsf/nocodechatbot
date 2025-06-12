@@ -7,9 +7,7 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
-      - key: PORT
-        value: 8000
-    healthCheckPath: /health
+    healthCheckPath: /
     buildCommand: mkdir -p models
     startCommand: /app/start.sh
     port: 8000 
