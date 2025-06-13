@@ -13,5 +13,5 @@ rasa run actions --port 5055 &
 # Wait for actions server to start
 sleep 10
 
-# Start the main Rasa server on port 8000 (in foreground)
-rasa run --enable-api --cors "*" --port 8000 --endpoints endpoints.yml 
+# Start the main Rasa server on port 8000 (in foreground) WITH REST CHANNEL
+rasa run --enable-api --cors "*" --port 8000 --endpoints endpoints.yml --connector rest
